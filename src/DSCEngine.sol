@@ -28,6 +28,7 @@ pragma solidity ^0.8.24;
 import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 /**
  * @title DSCEngine
@@ -54,14 +55,24 @@ contract DSCEngine is ReentrancyGuard {
     error DSCEngine__TokenAddressAndPriceFeedAddressMustBeSAmeLength();
     error DSCEngine__TokenNotAllowed();
     error DSCEngine__TransferFailed();
+    error DSCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DSCEngine__MintFailed();
 
     /**
      * STATE VARIABLES
      */
+    uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
+    uint256 private constant PRECISION = 1e18;
+    uint256 private constant LIQUIDATION_TRESHOLD = 50; // 200% over collaterized
+    uint256 private constant LIQUIDATION_PRECISION = 100;
+    uint256 private constant MIN_HEALTH_FACTOR = 1;
+
     DecentralizedStableCoin private immutable i_dsc;
     mapping(address collateralToken => address priceFeed) private s_priceFeeds;
     mapping(address token => address priceFeed) private priceFeeds; // tokenToPriceFeed
     mapping(address user => mapping(address token => uint256 amount)) private s_collateralDeposited;
+    mapping(address user => uint256 amountDscMinted) private s_DscMinted;
+    address[] private s_collateralTokens;
 
     /**
      *  EVENTS
@@ -97,6 +108,7 @@ contract DSCEngine is ReentrancyGuard {
         // eg ETH/USD, BTC/USD, ADA/USD
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
+            s_collateralTokens.push(tokenAddresses[i]);
         }
         i_dsc = DecentralizedStableCoin(dscAddress);
     }
@@ -107,7 +119,7 @@ contract DSCEngine is ReentrancyGuard {
     function depositeCollateralAndMintDsc() external {}
 
     /**
-     * @notice follows CEI (Checks Effecte Interactions)
+     * @notice follows CEI pattern (Checks Effecte Interactions)
      * @param _tokenCollateralAddress The address of the token to deposite as collateral
      * @param _amountCollateral The Amount of collateral to deposite
      */
@@ -134,11 +146,88 @@ contract DSCEngine is ReentrancyGuard {
 
     function redeemCollateral() external {}
 
-    function mintDsc() external {}
+    /**
+     * @notice follows CEI pattern (Checks Effecte Interactions)
+     * @param _amountDscToMint The amount of decentralized stable coin to mint.
+     * @notice They must have more collateral value than the treshhold
+     */
+    function mintDsc(uint256 _amountDscToMint) external moreThanZerro(_amountDscToMint) nonReentrant {
+        s_DscMinted[msg.sender] += _amountDscToMint;
+
+        // if they minted too much eg ($140 DSC, has $100 ETH)
+        _revertIfHealthFactorIsBroken(msg.sender);
+
+        bool minted = i_dsc.mint(msg.sender, _amountDscToMint);
+        if(!minted) {
+            revert DSCEngine__MintFailed();
+        }
+    }
 
     function burnDsc() external {}
 
     function liquidate() external {}
 
     function getHealth() external {}
+
+
+    /**
+     * Internal & Private View Functions
+     */
+
+    function _getAccountInformation(address user) private view returns(uint256 totalDscMinted, uint256 collateralValueInUsd) {
+        totalDscMinted = s_DscMinted[user];
+        collateralValueInUsd = getAccountCollateralValue(user);
+    }
+
+    /**
+     * Returns how close a user is to liqi=uidation
+     * If a user goes beyond 1, they can be liquidated
+     */
+    function _healthFactor(address user) private view  returns (uint256) {
+        // total DSC minted
+        // total collateral VALUE
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+        /**
+         * Making sure the user still has enough collateral to with-hold liquidation
+         * below we are checking if the collateral value is 200% compared to holdings
+         * eg user has 100 ETH his collateral value should be 
+         * => 100 * 50 = 5000 / 100 = 50 (His collateral Value can only allow for 50 DSC)
+         */
+        uint256 collateralAdjustmentForTreshold = (collateralValueInUsd * LIQUIDATION_TRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAdjustmentForTreshold * PRECISION) / totalDscMinted;
+    }
+
+    // 1. Check the health factor (Has enough collateral)
+    // 2. If not revert
+    function _revertIfHealthFactorIsBroken(address user) internal view {
+        uint256 userHealthFactor = _healthFactor(user);
+
+        if(userHealthFactor < MIN_HEALTH_FACTOR) {
+            revert DSCEngine__BreaksHealthFactor(userHealthFactor);
+        }
+    }
+
+    /**
+     * PUBLIC & EXTERNAL FUNCTIONS
+     */
+
+    function getAccountCollateralValue(address user) public view returns(uint256 totalCollateralValueInUsd) {
+        // loop through each collateral token, get the amount they have deposited
+        // and map it to the price, to get the USD value
+        for(uint256 i = 0; i < s_collateralTokens.length; i++) {
+            address token = s_collateralTokens[i];
+            uint256 amount = s_collateralDeposited[user][token];
+            totalCollateralValueInUsd += getUsdValue(token, amount);
+        }
+        return totalCollateralValueInUsd;
+    }
+
+    function getUsdValue(address _token, uint256 _amount) public view returns(uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[_token]);
+        (, int256 price,,,) = priceFeed.latestRoundData();
+        // eg if ETH is $1000
+        // the returned value from chainlink will be 1000 * 1e8
+        // to get a precision we have to first multiply the returne price by additional 10 zerros to equall 1e18
+        return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * _amount) / PRECISION; // (1000 * 1e8 * (1e10))
+    }
 }
