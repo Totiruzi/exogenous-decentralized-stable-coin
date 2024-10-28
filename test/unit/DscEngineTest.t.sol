@@ -36,8 +36,11 @@ contract DscEngineTest is Test {
         uint256 ethAmount = 30e18;
         // 30e18 * 2500/ETH = 75,000e18;
         uint256 expectedUsd = 75_000e18;
+        // uint256 expectedUsd = 75743710424100000000000; // When running for sepolia network for now need to keep changing thr expected price with respect to the console out from real world price
+
         uint256 actualUsd = dscEngine.getUsdValue(weth, ethAmount);
         console2.log("the actual ETH price is: {}", actualUsd);
+        console2.log("Sender address", msg.sender);
         assertEq(expectedUsd, actualUsd);
     }
 
