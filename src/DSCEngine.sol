@@ -254,7 +254,6 @@ contract DSCEngine is ReentrancyGuard {
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
-
     function getHealth() external {}
 
     /**
@@ -310,11 +309,11 @@ contract DSCEngine is ReentrancyGuard {
     }
 
     /**
-     * 
+     *
      * @param _amountDscToBurn The amount of Dsc to burn
      * @param onBahalfOf Whose token is been burnt
      * @param dscFrom Who is recieving the burnt token
-     * @dev Low-level internal function. Do ot call unless the function calling it is checking for 
+     * @dev Low-level internal function. Do ot call unless the function calling it is checking for
      * "Health Factor" been broken
      */
     function _burnDsc(uint256 _amountDscToBurn, address onBahalfOf, address dscFrom) private {
@@ -356,5 +355,17 @@ contract DSCEngine is ReentrancyGuard {
         (, int256 price,,,) = priceFeed.latestRoundData();
 
         return ((usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION));
+    }
+
+    function getAccountInformation(address user)
+        external
+        view
+        returns (uint256 totalDscMinted, uint256 collateralValueInUsd)
+    {
+        (totalDscMinted, collateralValueInUsd) = _getAccountInformation(user);
+    }
+
+    function getHealthFactor(address user) external view returns(uint256 userHealthFactor) {
+        userHealthFactor = _healthFactor(user);
     }
 }
