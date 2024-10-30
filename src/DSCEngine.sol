@@ -272,10 +272,25 @@ contract DSCEngine is ReentrancyGuard {
      * Returns how close a user is to liqi=uidation
      * If a user goes beyond 1, they can be liquidated
      */
+    // function _healthFactor(address user) private view returns (uint256) {
+    //     // total DSC minted
+    //     // total collateral VALUE
+    //     (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+    //     /**
+    //      * Making sure the user still has enough collateral to with-hold liquidation
+    //      * below we are checking if the collateral value is 200% compared to holdings
+    //      * eg user has 100 ETH his collateral value should be
+    //      * => 100 * 50 = 5000 / 100 = 50 (His collateral Value can only allow for 50 DSC)
+    //      */
+    //     uint256 collateralAdjustmentForTreshold = (collateralValueInUsd * LIQUIDATION_TRESHOLD) / LIQUIDATION_PRECISION;
+    //     return (collateralAdjustmentForTreshold * PRECISION) / totalDscMinted;
+    // }
+
     function _healthFactor(address user) private view returns (uint256) {
         // total DSC minted
         // total collateral VALUE
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+         if (totalDscMinted == 0) return type(uint256).max;
         /**
          * Making sure the user still has enough collateral to with-hold liquidation
          * below we are checking if the collateral value is 200% compared to holdings
@@ -367,5 +382,9 @@ contract DSCEngine is ReentrancyGuard {
 
     function getHealthFactor(address user) external view returns(uint256 userHealthFactor) {
         userHealthFactor = _healthFactor(user);
+    }
+
+    function getDscMinted(address user) external view returns(uint256 amountMinted) {
+        amountMinted = s_DscMinted[user];
     }
 }
