@@ -29,6 +29,7 @@ import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+import { console2 } from "forge-std/Script.sol";
 
 /**
  * @title DSCEngine
@@ -128,12 +129,12 @@ contract DSCEngine is ReentrancyGuard {
      * @param _amountDscToMint The amount of decentralized stablecoin to mint
      * @notice This function will deposit your colateral and mint DSC in one transaction
      */
-    function depositeCollateralAndMintDsc(
+    function depositCollateralAndMintDsc(
         address _tokenCollateralAddress,
         uint256 _amountCollateral,
         uint256 _amountDscToMint
     ) external {
-        depositeColateral(_tokenCollateralAddress, _amountCollateral);
+        depositCollateral(_tokenCollateralAddress, _amountCollateral);
         mintDsc(_amountDscToMint);
     }
 
@@ -142,7 +143,7 @@ contract DSCEngine is ReentrancyGuard {
      * @param _tokenCollateralAddress The address of the token to deposite as collateral
      * @param _amountCollateral The Amount of collateral to deposite
      */
-    function depositeColateral(address _tokenCollateralAddress, uint256 _amountCollateral)
+    function depositCollateral(address _tokenCollateralAddress, uint256 _amountCollateral)
         public
         moreThanZerro(_amountCollateral)
         isAllowedToken(_tokenCollateralAddress)
@@ -332,7 +333,13 @@ contract DSCEngine is ReentrancyGuard {
      * "Health Factor" been broken
      */
     function _burnDsc(uint256 _amountDscToBurn, address onBahalfOf, address dscFrom) private {
+        uint256 DSCMinted = s_DscMinted[onBahalfOf];
+        console2.log("DSCMinted: ",DSCMinted);
+        console2.log("Amount Dsc to burn before sudstraction : ",_amountDscToBurn);
+
         s_DscMinted[onBahalfOf] -= _amountDscToBurn;
+
+        console2.log("Amount Dsc to burn after sudstraction : ",_amountDscToBurn);
         bool success = i_dsc.transferFrom(dscFrom, address(this), _amountDscToBurn);
 
         if (!success) {
@@ -341,6 +348,12 @@ contract DSCEngine is ReentrancyGuard {
 
         i_dsc.burn(_amountDscToBurn);
     }
+
+    function _calculateHealthFactor(uint256 _totalDscMinted, uint256 _collateralValueInUsd) internal pure returns(uint256) {
+        if (_totalDscMinted == 0) return type(uint256).max;
+        uint256 collateralAjustedForThreshold = (_collateralValueInUsd * LIQUIDATION_TRESHOLD) / LIQUIDATION_PRECISION;
+        return (collateralAjustedForThreshold * PRECISION) / _totalDscMinted;
+    } 
 
     /**
      * PUBLIC & EXTERNAL FUNCTIONS
@@ -386,5 +399,21 @@ contract DSCEngine is ReentrancyGuard {
 
     function getDscMinted(address user) external view returns(uint256 amountMinted) {
         amountMinted = s_DscMinted[user];
+    }
+
+    function getAdditionalFeedPrecition() external pure returns(uint256) {
+        return ADDITIONAL_FEED_PRECISION;
+    }
+
+    function getPrecision() external pure returns(uint256) {
+        return PRECISION;
+    }
+
+    function calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd) public pure returns(uint256) {
+        return _calculateHealthFactor(totalDscMinted, collateralValueInUsd);
+    }
+
+    function getAdditionalFeedPrecision() external pure returns(uint256) {
+        return ADDITIONAL_FEED_PRECISION;
     }
 }
