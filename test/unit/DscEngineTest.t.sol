@@ -421,4 +421,53 @@ modifier depositCollateral() {
     //     assertEq(actual_amount_of_DSC_minted_by_liquidatee, expected_amount_of_DSC_minted_by_liquidatee);
        
     // }
+
+    //     modifier user_deposited_wETH_and_minted_appropriate_DSC() {
+    //     vm.startPrank(EngrPips);
+    //     ERC20Mock(wETH_token_address).approve(address(dsc_engine), wETH_test_amount);
+    //     dsc_engine.depositCollateral(wETH_token_address, wETH_test_amount);
+    //     dsc_engine.mintDSC(appropriate_DSC_to_mint);
+    //     vm.stopPrank();
+    //     _;
+    // }
+
+    // modifier set_up_DSC_that_returns_false_on_transfer_from() {
+    //     decentralized_stable_coin_that_returns_false_on_transfer_from = new MockReturnFalseOnTransferFrom();
+
+    //     address_of_collateral_tokens.push(wETH_token_address);
+    //     address_of_collateral_tokens.push(wBTC_token_address);
+
+    //     address_of_collateral_token_price_feeds.push(wETH_token_addres_price_feed);
+    //     address_of_collateral_token_price_feeds.push(wBTC_token_addres_price_feed);
+
+    //     dsc_engine = new DSCEngine(address_of_collateral_tokens, address_of_collateral_token_price_feeds, address(decentralized_stable_coin_that_returns_false_on_transfer_from));
+    //     MockFailedTransferFrom(address(decentralized_stable_coin_that_returns_false_on_transfer_from)).transferOwnership(address(dsc_engine));
+    
+    //     _;
+    // }
+
+    // function test_DSCEngine_reverts_when_user_tries_to_burn_zero_DSC() public user_deposited_wETH_and_minted_appropriate_DSC {
+    //     vm.prank(EngrPips);
+    //     vm.expectRevert(DSCEngine.DSCEngine__transaction_amount_needs_to_be_greater_than_zero.selector);
+    //     dsc_engine.burnDSC(0);
+    // }
+
+    // function test_DSCEngine_appropriately_burn_decentralized_stable_coin() public user_deposited_wETH_and_minted_appropriate_DSC {
+    //     vm.prank(EngrPips);
+    //     DecentralizedStableCoin(address(decentralized_stable_coin)).approve(address(dsc_engine), appropriate_DSC_to_burn);
+    //     vm.prank(EngrPips);
+    //     dsc_engine.burnDSC(appropriate_DSC_to_burn);
+    //     uint256 expected_DSC_balance_of_user = 0.1 ether;
+    //     uint256 actual_DSC_balance_of_user = dsc_engine.get_amount_of_DSC_minted_by_user(EngrPips);
+    //     assertEq(actual_DSC_balance_of_user, expected_DSC_balance_of_user);
+    // }
+
+    // function test_DSCEngine_revert_when_decentralized_stable_coin_returns_false_on_transfer_from() public set_up_DSC_that_returns_false_on_transfer_from user_deposited_weth {
+    //     vm.prank(EngrPips);
+    //     dsc_engine.mintDSC(appropriate_DSC_to_mint);
+    //     MockReturnFalseOnTransferFrom(address(decentralized_stable_coin_that_returns_false_on_transfer_from)).approve(address(dsc_engine), appropriate_DSC_to_burn);
+    //     vm.prank(EngrPips);
+    //     vm.expectRevert(DSCEngine.DSCEngine__transfer_failed_when_user_try_to_burn_DSC.selector);
+    //     dsc_engine.burnDSC(appropriate_DSC_to_burn);
+    // }
 }
