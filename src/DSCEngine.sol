@@ -29,7 +29,7 @@ import {DecentralizedStableCoin} from "src/DecentralizedStableCoin.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
-import { console2 } from "forge-std/Script.sol";
+import {console2} from "forge-std/Script.sol";
 
 /**
  * @title DSCEngine
@@ -273,25 +273,11 @@ contract DSCEngine is ReentrancyGuard {
      * Returns how close a user is to liqi=uidation
      * If a user goes beyond 1, they can be liquidated
      */
-    // function _healthFactor(address user) private view returns (uint256) {
-    //     // total DSC minted
-    //     // total collateral VALUE
-    //     (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
-    //     /**
-    //      * Making sure the user still has enough collateral to with-hold liquidation
-    //      * below we are checking if the collateral value is 200% compared to holdings
-    //      * eg user has 100 ETH his collateral value should be
-    //      * => 100 * 50 = 5000 / 100 = 50 (His collateral Value can only allow for 50 DSC)
-    //      */
-    //     uint256 collateralAdjustmentForTreshold = (collateralValueInUsd * LIQUIDATION_TRESHOLD) / LIQUIDATION_PRECISION;
-    //     return (collateralAdjustmentForTreshold * PRECISION) / totalDscMinted;
-    // }
-
     function _healthFactor(address user) private view returns (uint256) {
         // total DSC minted
         // total collateral VALUE
         (uint256 totalDscMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
-         if (totalDscMinted == 0) return type(uint256).max;
+        if (totalDscMinted == 0) return type(uint256).max;
         /**
          * Making sure the user still has enough collateral to with-hold liquidation
          * below we are checking if the collateral value is 200% compared to holdings
@@ -334,12 +320,12 @@ contract DSCEngine is ReentrancyGuard {
      */
     function _burnDsc(uint256 _amountDscToBurn, address onBahalfOf, address dscFrom) private {
         uint256 DSCMinted = s_DscMinted[onBahalfOf];
-        console2.log("DSCMinted: ",DSCMinted);
-        console2.log("Amount Dsc to burn before sudstraction : ",_amountDscToBurn);
+        console2.log("DSCMinted: ", DSCMinted);
+        console2.log("Amount Dsc to burn before sudstraction : ", _amountDscToBurn);
 
         s_DscMinted[onBahalfOf] -= _amountDscToBurn;
 
-        console2.log("Amount Dsc to burn after sudstraction : ",_amountDscToBurn);
+        console2.log("Amount Dsc to burn after sudstraction : ", _amountDscToBurn);
         bool success = i_dsc.transferFrom(dscFrom, address(this), _amountDscToBurn);
 
         if (!success) {
@@ -349,11 +335,15 @@ contract DSCEngine is ReentrancyGuard {
         i_dsc.burn(_amountDscToBurn);
     }
 
-    function _calculateHealthFactor(uint256 _totalDscMinted, uint256 _collateralValueInUsd) internal pure returns(uint256) {
+    function _calculateHealthFactor(uint256 _totalDscMinted, uint256 _collateralValueInUsd)
+        internal
+        pure
+        returns (uint256)
+    {
         if (_totalDscMinted == 0) return type(uint256).max;
         uint256 collateralAjustedForThreshold = (_collateralValueInUsd * LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
         return (collateralAjustedForThreshold * PRECISION) / _totalDscMinted;
-    } 
+    }
 
     /**
      * PUBLIC & EXTERNAL FUNCTIONS
@@ -401,7 +391,7 @@ contract DSCEngine is ReentrancyGuard {
         return address(i_dsc);
     }
 
-    function getHealthFactor(address user) external view returns(uint256 userHealthFactor) {
+    function getHealthFactor(address user) external view returns (uint256 userHealthFactor) {
         userHealthFactor = _healthFactor(user);
     }
 
@@ -409,23 +399,27 @@ contract DSCEngine is ReentrancyGuard {
         return MIN_HEALTH_FACTOR;
     }
 
-    function getDscMinted(address user) external view returns(uint256 amountMinted) {
+    function getDscMinted(address user) external view returns (uint256 amountMinted) {
         amountMinted = s_DscMinted[user];
     }
 
-    function getAdditionalFeedPrecition() external pure returns(uint256) {
+    function getAdditionalFeedPrecition() external pure returns (uint256) {
         return ADDITIONAL_FEED_PRECISION;
     }
 
-    function getPrecision() external pure returns(uint256) {
+    function getPrecision() external pure returns (uint256) {
         return PRECISION;
     }
 
-    function calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd) public pure returns(uint256) {
+    function calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd)
+        public
+        pure
+        returns (uint256)
+    {
         return _calculateHealthFactor(totalDscMinted, collateralValueInUsd);
     }
 
-    function getAdditionalFeedPrecision() external pure returns(uint256) {
+    function getAdditionalFeedPrecision() external pure returns (uint256) {
         return ADDITIONAL_FEED_PRECISION;
     }
 
