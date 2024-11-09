@@ -181,7 +181,7 @@ contract DscEngineTest is StdCheats, Test {
     function testRevertsIfMintedUsdBreaksHealtFactor() public {
         (, int256 price,,,) = MockV3Aggregator(ethUsdPriceFeed).latestRoundData();
         amount_to_mint =
-            (AMOUNT_COLLATERAL * (uint256(price)) * dscEngine.getAdditionalFeedPrecition()) / dscEngine.getPrecision();
+            (AMOUNT_COLLATERAL * (uint256(price)) * dscEngine.getAdditionalFeedPrecision()) / dscEngine.getPrecision();
 
         vm.startPrank(USER);
         ERC20Mock(weth).approve(address(dscEngine), AMOUNT_COLLATERAL);

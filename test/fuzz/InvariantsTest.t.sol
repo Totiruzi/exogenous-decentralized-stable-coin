@@ -51,7 +51,29 @@ contract InvariantsTest is StdInvariant, Test {
         console2.log("weth value in USD", wethValueInUsd);
         console2.log("wbtc value in USD", wbtcValueInUsd);
         console2.log("total supply value in USD", totalSupply);
+        console2.log("weth address in Invariant", weth);
+        console2.log("wbtc address in Invariant", wbtc);
+        console2.log("Time mint is called: ", handler.timeMintIscalled());
 
         assert((wethValueInUsd + wbtcValueInUsd) >= totalSupply);
+    }
+
+    function invariant_gettersShouldNotRevert() public view {
+        dscEngine.getAccountCollateralValue(msg.sender);
+        dscEngine.getAccountInformation(msg.sender);
+        dscEngine.getAdditionalFeedPrecision();
+        dscEngine.getCollateralBalanceOfUser(msg.sender, weth);
+        dscEngine.getCollateralTokenPriceFeed(weth);
+        dscEngine.getCollateralTokens();
+        dscEngine.getDsc();
+        dscEngine.getDscMinted(msg.sender);
+        dscEngine.getHealthFactor(msg.sender);
+        dscEngine.getLiquidationBonus();
+        dscEngine.getLiquidationPrecision();
+        dscEngine.getLiquidationThreshold();
+        dscEngine.getMinHealthFactor();
+        dscEngine.getPrecision();
+        // dscEngine.getTokenAmountFromUsd(); // takes 2 args(addressToken, amountToken)
+        // dscEngine.getUsdValue(); // takes 2 args(addressToken, amountToken)
     }
 }
