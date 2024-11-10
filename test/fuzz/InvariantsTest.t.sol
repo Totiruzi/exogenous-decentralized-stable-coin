@@ -43,8 +43,8 @@ contract InvariantsTest is StdInvariant, Test {
         // and compare it to all the dept (dsc)
 
         uint256 totalSupply = dsc.totalSupply();
-        uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dsc));
-        uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dsc));
+        uint256 totalWethDeposited = IERC20(weth).balanceOf(address(dscEngine));
+        uint256 totalWbtcDeposited = IERC20(wbtc).balanceOf(address(dscEngine));
         uint256 wethValueInUsd = dscEngine.getUsdValue(weth, totalWethDeposited);
         uint256 wbtcValueInUsd = dscEngine.getUsdValue(wbtc, totalWbtcDeposited);
 

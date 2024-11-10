@@ -52,30 +52,29 @@ contract Handler is Test {
         usersWithCollateralDeposited.push(msg.sender);
     }
 
-    // function mintDsc(uint256 amountDscToMint, uint256 addressSeed) public {
-    //     if (usersWithCollateralDeposited.length == 0) return;
-    //     console2.log("ADDRESS SEED",  addressSeed);
-    //     address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
-    //     (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(sender);
+    function mintDsc(uint256 amountDscToMint, uint256 addressSeed) public {
+        if (usersWithCollateralDeposited.length == 0) return;
+        console2.log("ADDRESS SEED",  addressSeed);
+        address sender = usersWithCollateralDeposited[addressSeed % usersWithCollateralDeposited.length];
+        (uint256 totalDscMinted, uint256 collateralValueInUsd) = dscEngine.getAccountInformation(sender);
 
-    //     // if (collateralValueInUsd == 0) return;
 
-    //     int256 maxDscToMint = (int256(collateralValueInUsd) / 2) - int256(totalDscMinted);
+        int256 maxDscToMint = (int256(collateralValueInUsd) / 2) - int256(totalDscMinted);
 
-    //     if (maxDscToMint < 0) return;
+        if (maxDscToMint < 0) return;
 
-    //     amountDscToMint = bound(amountDscToMint, 0, uint256(maxDscToMint));
+        amountDscToMint = bound(amountDscToMint, 0, uint256(maxDscToMint));
 
-    //     if (amountDscToMint == 0) return;
+        if (amountDscToMint == 0) return;
 
-    //     vm.startPrank(sender);
-    //     dscEngine.mintDsc(amountDscToMint);
-    //     vm.stopPrank();
+        vm.startPrank(sender);
+        dscEngine.mintDsc(amountDscToMint);
+        vm.stopPrank();
 
-    //     console2.log("weth address in Handler", address(weth));
-    //     console.log("wbtc address in Handler", address(wbtc));
-    //     timeMintIscalled++;
-    // }
+        console2.log("weth address in Handler", address(weth));
+        console.log("wbtc address in Handler", address(wbtc));
+        timeMintIscalled++;
+    }
 
     function reddeemCollateral(uint256 collateralSeed, uint256 amountCollateral) public {
         ERC20Mock collateral = _getCollateralFromSeed(collateralSeed);
